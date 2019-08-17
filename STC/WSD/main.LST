@@ -1,0 +1,654 @@
+C51 COMPILER V7.06   MAIN                                                                  12/09/2016 21:15:09 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\hex\main.obj
+COMPILER INVOKED BY: D:\Keil4\C51\BIN\C51.EXE main.c LARGE BROWSE DEBUG OBJECTEXTEND TABS(2) OBJECT(.\hex\main.obj)
+
+stmt level    source
+
+   1          //#include <../STC12C5A60S2.h>
+   2          #include "lcd_086.h"
+   3          #include "dht11.h"
+   4          #include "global.h"
+   5          #include "ds1820.h"
+   6          #include "eeprom.h"
+   7          //unsigned char num[]={0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x39};
+   8          
+   9          #define ADDR_HR_H   0x0000
+  10          #define ADDR_HR_L   0x0001
+  11          #define ADDR_T_H  0x0002
+  12          #define ADDR_T_L  0x0003
+  13          
+  14          
+  15          sbit led = P0^4;
+  16          sbit beep = P1^0;
+  17          
+  18          sbit key_up = P0^3;
+  19          sbit key_down = P0^2;
+  20          sbit key_ok = P0^1;
+  21          sbit key_cancel = P0^0;
+  22          
+  23          sbit Port_humiH = P1^5;
+  24          sbit Port_humiL = P1^6;
+  25          sbit Port_tempH = P1^7;
+  26          sbit Port_tempL = P3^2;
+  27          
+  28          
+  29          int temp_val = 0;
+  30          int humi_dat,temp_dat;
+  31          int humi_setH,temp_setH;
+  32          int humi_setL,temp_setL;
+  33          int humi_alarmH,temp_alarmH;
+  34          int humi_alarmL,temp_alarmL;
+  35          
+  36          uchar t_flag = 0;
+  37          uchar dht_flag = 0;
+  38          
+  39          uchar KeyValue = 0;
+  40          
+  41          unsigned char code cursor[] =                  // 数据表
+  42          {
+  43                0xF8,0xFC,0x84,0x84,0x04,0x02,0x02,0x07,
+  44                0x05,0xD7,0xD4,0xD4,0x34,0x14,0x14,0x0C,
+  45                0x00,0x00,0x00,0x00,0x01,0x03,0x02,0x02,
+  46                0x02,0x02,0x02,0x03,0x00,0x00,0x00,0x00
+  47          };
+  48          
+  49          uchar func_index = 0;
+  50          void (*current_operation_index)();
+  51          
+  52          void display_main1();
+  53          void display_main2();
+  54          void display_wsd();
+  55          void display_set();     //设定温湿度主界面1
+C51 COMPILER V7.06   MAIN                                                                  12/09/2016 21:15:09 PAGE 2   
+
+  56          void display_set2();    //设定温湿度主界面2
+  57          void display_showSet();   //显示报警值
+  58          void display_setSDH1();   //设定湿度上限
+  59          void display_setWDH1();   //设定温度上限
+  60          void display_setSDL1();   //设定湿度下限
+  61          void display_setWDL1();   //设定温度下限
+  62          void display_setSDH2();   //设定湿度上限
+  63          void display_setWDH2();   //设定温度上限
+  64          void display_setSDL2();   //设定湿度下限
+  65          void display_setWDL2();   //设定温度下限
+  66          
+  67          typedef struct{
+  68            uchar current;      //当前索引号
+  69            uchar up;       //上翻索引号
+  70            uchar down;       //下翻索引号
+  71            uchar ok;       //确认索引号
+  72            uchar cancel;           //返回索引号
+  73            void (*current_operation)(); 
+  74          }key_table;
+  75          
+  76          key_table code table[14]={
+  77          
+  78            {0,0,1,2,0,(*display_main1)},
+  79            {1,0,1,3,0,(*display_main2)},
+  80          
+  81            {2,2,2,13,0,(*display_wsd)},
+  82          
+  83            {3,3,4,5,0,(*display_set)},
+  84            {4,3,4,7,0,(*display_set2)},
+  85            
+  86            {5,5,6,9,3,(*display_setSDH1)},
+  87            {6,5,6,10,3,(*display_setWDH1)},
+  88            {7,7,8,11,4,(*display_setSDL1)},
+  89            {8,7,8,12,4,(*display_setWDL1)},
+  90          
+  91            {9,9,9,9,5,(*display_setSDH2)},
+  92            {10,10,10,10,6,(*display_setWDH2)}, 
+  93            {11,11,11,11,7,(*display_setSDL2)},
+  94            {12,12,12,12,8,(*display_setWDL2)},
+  95          
+  96            {13,13,13,3,2,(*display_showSet)},
+  97          
+  98          };
+  99          
+ 100          void IO_Init();
+ 101          void display_value(int val,unsigned char x,unsigned char y,unsigned char type);
+ 102          void Delay_ms(unsigned int ms); 
+ 103          uchar Key_Scan();
+ 104          void Beep(uint ms);
+ 105          void Led(uint ms);
+ 106          
+ 107          void read_AlarmValue();
+ 108          void write_AlarmValue();
+ 109          //void Alarm();
+ 110          
+ 111          
+ 112          void main(){
+ 113   1      
+ 114   1        Delay_ms(200);
+ 115   1        
+ 116   1        
+ 117   1        IO_Init();
+C51 COMPILER V7.06   MAIN                                                                  12/09/2016 21:15:09 PAGE 3   
+
+ 118   1        
+ 119   1        led = 0;beep = 0;
+ 120   1        
+ 121   1        initial_lcd();
+ 122   1        clear_screen();
+ 123   1        
+ 124   1        read_AlarmValue();
+ 125   1      
+ 126   1        while(1){
+ 127   2          
+ 128   2           KeyValue = Key_Scan();
+ 129   2          //display_wsd();
+ 130   2          current_operation_index=table[func_index].current_operation;
+ 131   2            (*current_operation_index)();//执行当前操作函数 
+ 132   2        }
+ 133   1      
+ 134   1      }
+ 135          
+ 136          
+ 137          
+ 138          
+ 139          
+ 140          void Delay_ms(unsigned int ms) 
+ 141          { 
+ 142   1        unsigned int x, y; 
+ 143   1        for(x = ms; x > 0; x--) 
+ 144   1        { 
+ 145   2          for(y = 400; y > 0; y--); 
+ 146   2        } 
+ 147   1      } 
+ 148          
+ 149          void Beep(uint ms){
+ 150   1         
+ 151   1        beep = 1;
+ 152   1        Delay_ms(ms);
+ 153   1        beep = 0;
+ 154   1      }
+ 155          
+ 156          void Led(uint ms){
+ 157   1      
+ 158   1        led = ~led;
+ 159   1      }
+*** WARNING C280 IN LINE 156 OF MAIN.C: 'ms': unreferenced local variable
+ 160          
+ 161          void IO_Init(){
+ 162   1        P1M1 |= 0x00;
+ 163   1        P1M0 |= 0x01;
+ 164   1      }
+ 165          
+ 166          
+ 167          
+ 168          void read_AlarmValue(){
+ 169   1        
+ 170   1        Open_IAP();
+ 171   1        
+ 172   1        humi_alarmH = Read_IAP_Byte(ADDR_HR_H);
+ 173   1        humi_alarmL = Read_IAP_Byte(ADDR_HR_L);
+ 174   1          temp_alarmH = Read_IAP_Byte(ADDR_T_H);
+ 175   1          temp_alarmL = Read_IAP_Byte(ADDR_T_L);
+ 176   1      
+ 177   1        if(humi_alarmH == 0xff)
+ 178   1          humi_alarmH = 40;
+C51 COMPILER V7.06   MAIN                                                                  12/09/2016 21:15:09 PAGE 4   
+
+ 179   1        if(humi_alarmL == 0xff)
+ 180   1          humi_alarmH = 40;
+ 181   1        if(temp_alarmH == 0xff)
+ 182   1          temp_alarmH = 40;
+ 183   1        if(humi_alarmL == 0xff)
+ 184   1          temp_alarmL = 40;
+ 185   1      
+ 186   1          Close_IAP();
+ 187   1      
+ 188   1      
+ 189   1      }
+ 190          void write_AlarmValue(){
+ 191   1      
+ 192   1        Open_IAP();
+ 193   1        
+ 194   1        Erase_IAP_Sector(ADDR_HR_H);
+ 195   1        Write_IAP_Byte(ADDR_HR_H,humi_alarmH);
+ 196   1        Write_IAP_Byte(ADDR_HR_L,humi_alarmL);
+ 197   1        Write_IAP_Byte(ADDR_T_H,temp_alarmH);
+ 198   1        Write_IAP_Byte(ADDR_T_L,temp_alarmL);
+ 199   1      
+ 200   1          Close_IAP();
+ 201   1      }
+ 202          /*
+ 203          void Alarm(){
+ 204          
+ 205            
+ 206          }
+ 207          */
+ 208          
+ 209          uchar Key_Scan(){
+ 210   1        
+ 211   1        uchar keycode = 0;
+ 212   1      
+ 213   1        if((key_up==0)||(key_down==0)||(key_ok==0)||(key_cancel==0))
+ 214   1        {
+ 215   2          Delay_ms(10);//消抖
+ 216   2          if(key_up==0)
+ 217   2          {
+ 218   3            
+ 219   3            func_index=table[func_index].up;    //向上翻
+ 220   3            while(!key_up);//松手检测
+ 221   3            keycode = KEY_UP;
+ 222   3          }
+ 223   2          if(key_down==0)
+ 224   2          {
+ 225   3          
+ 226   3            func_index=table[func_index].down;    //向下翻
+ 227   3            while(!key_down);
+ 228   3            keycode = KEY_DOWN;
+ 229   3          }
+ 230   2          if(key_ok==0)
+ 231   2          {
+ 232   3          
+ 233   3            func_index=table[func_index].ok;    //确认
+ 234   3            while(!key_ok);
+ 235   3            keycode = KEY_OK;
+ 236   3          }
+ 237   2          if(key_cancel==0)
+ 238   2          {
+ 239   3            func_index=table[func_index].cancel;    //取消
+ 240   3            while(!key_cancel);
+C51 COMPILER V7.06   MAIN                                                                  12/09/2016 21:15:09 PAGE 5   
+
+ 241   3            keycode = KEY_CANCEL;
+ 242   3          }
+ 243   2          Beep(100);
+ 244   2          Led(20);
+ 245   2          clear_screen();
+ 246   2          return keycode;
+ 247   2        }       
+ 248   1        return keycode;
+ 249   1      }
+ 250          
+ 251          
+ 252          void display_main1(){
+ 253   1          
+ 254   1          display_GB2312_string(1,16,"温湿度测量仪"); 
+ 255   1          display_graphic_16x16(3,1,cursor);
+ 256   1          display_GB2312_string(3,22,"测量温湿度"); 
+ 257   1          display_GB2312_string(5,22,"报警值设定");
+ 258   1          display_GB2312_string(7,72,"Ver 1.0");
+ 259   1      }
+ 260          
+ 261          
+ 262          void display_main2(){
+ 263   1        
+ 264   1          display_GB2312_string(1,16,"温湿度测量仪"); 
+ 265   1          display_graphic_16x16(5,1,cursor);
+ 266   1          display_GB2312_string(3,22,"测量温湿度"); 
+ 267   1          display_GB2312_string(5,22,"报警值设定");
+ 268   1          display_GB2312_string(7,72,"Ver 1.0");
+ 269   1      }
+ 270          
+ 271          void display_wsd(){
+ 272   1      
+ 273   1          display_GB2312_string(1,16,"温湿度测量仪"); 
+ 274   1          display_GB2312_string(3,1,"湿度:"); 
+ 275   1          display_GB2312_string(5,1,"温度1:");
+ 276   1          display_GB2312_string(7,1,"温度2:");
+ 277   1        
+ 278   1          temp_val = ReadOne_T();
+ 279   1          display_value(temp_val,7,48,1);
+ 280   1        
+ 281   1          Rec_DHT();
+ 282   1          display_value(humi_dat,3,48,2);
+ 283   1          display_value(temp_dat,5,48,1);
+ 284   1      
+ 285   1          //报警检测
+ 286   1          //判断湿度
+ 287   1          if( humi_dat < humi_alarmL*10){
+ 288   2            Beep(1000);
+ 289   2            Port_humiL = 0;
+ 290   2            display_GB2312_string(3,104,"低");
+ 291   2          }else
+ 292   1           if( humi_dat> humi_alarmH*10){
+ 293   2            Beep(1000);
+ 294   2            Port_humiH = 0;
+ 295   2            display_GB2312_string(3,104,"高");
+ 296   2                 
+ 297   2          }else
+ 298   1          {
+ 299   2            Port_humiH = 1;
+ 300   2            
+ 301   2            display_GB2312_string(3,104,"正");
+ 302   2          }
+C51 COMPILER V7.06   MAIN                                                                  12/09/2016 21:15:09 PAGE 6   
+
+ 303   1          
+ 304   1          //判断温度
+ 305   1          if( temp_val< temp_alarmL*10){
+ 306   2            Beep(1000);
+ 307   2            Port_tempL = 0;
+ 308   2            display_GB2312_string(7,104,"低");
+ 309   2          }else
+ 310   1           if( temp_val> temp_alarmH*10){
+ 311   2            Beep(1000);
+ 312   2            Port_tempH = 0;
+ 313   2            display_GB2312_string(7,104,"高");
+ 314   2          }else
+ 315   1          {
+ 316   2            Port_tempH = 1;
+ 317   2            
+ 318   2            display_GB2312_string(7,104,"正");
+ 319   2          }
+ 320   1      }
+ 321          
+ 322          
+ 323          void display_set(){
+ 324   1          
+ 325   1          display_GB2312_string(1,16,"设定温湿度值"); 
+ 326   1          display_graphic_16x16(3,1,cursor);
+ 327   1          display_GB2312_string(3,18,"湿度高"); 
+ 328   1          display_GB2312_string(3,82,"温度高");
+ 329   1          display_GB2312_string(5,18,"湿度低"); 
+ 330   1          display_GB2312_string(5,82,"温度低");
+ 331   1          display_GB2312_string(7,1,"选择值");
+ 332   1          display_GB2312_string(7,72,"Ver 1.0");
+ 333   1        
+ 334   1          humi_setH = humi_alarmH;humi_setL = humi_alarmL;
+ 335   1          temp_setH = temp_alarmH;temp_setL = temp_alarmL;
+ 336   1      
+ 337   1      }
+ 338          
+ 339          void display_set2(){
+ 340   1      
+ 341   1      
+ 342   1          display_GB2312_string(1,16,"设定温湿度值"); 
+ 343   1          display_graphic_16x16(5,1,cursor);
+ 344   1          display_GB2312_string(3,18,"湿度高"); 
+ 345   1          display_GB2312_string(3,82,"温度高");
+ 346   1          display_GB2312_string(5,18,"湿度低"); 
+ 347   1          display_GB2312_string(5,82,"温度低");
+ 348   1          display_GB2312_string(7,1,"选择值");
+ 349   1          display_GB2312_string(7,72,"Ver 1.0");
+ 350   1        
+ 351   1          humi_setH = humi_alarmH;humi_setL = humi_alarmL;
+ 352   1          temp_setH = temp_alarmH;temp_setL = temp_alarmL;
+ 353   1          
+ 354   1      }
+ 355          
+ 356          
+ 357          void display_showSet(){
+ 358   1      
+ 359   1        
+ 360   1          display_GB2312_string(1,16,"温湿度报警值"); 
+ 361   1          display_GB2312_string(3,22,"高");
+ 362   1          display_GB2312_string(3,91,"低"); 
+ 363   1        
+ 364   1        
+C51 COMPILER V7.06   MAIN                                                                  12/09/2016 21:15:09 PAGE 7   
+
+ 365   1          
+ 366   1          display_value(humi_alarmH*10,5,4,2);
+ 367   1          display_value(humi_alarmL*10,5,74,2);
+ 368   1          display_value(temp_alarmH*10,7,4,1);
+ 369   1          display_value(temp_alarmL*10,7,74,1);
+ 370   1      }
+ 371          
+ 372          
+ 373          //设定 湿度高限
+ 374          void display_setSDH1(){
+ 375   1        
+ 376   1            display_GB2312_string(1,16,"设定温湿度值"); 
+ 377   1          display_graphic_16x16(3,1,cursor);
+ 378   1          display_GB2312_string(3,18,"湿度高"); 
+ 379   1          display_GB2312_string(5,18,"温度高");
+ 380   1          display_GB2312_string(7,1,"选择湿度");
+ 381   1          display_GB2312_string(7,72,"Ver 1.0");
+ 382   1      
+ 383   1          humi_setH = humi_alarmH;
+ 384   1          temp_setH = temp_alarmH;
+ 385   1      
+ 386   1          display_value(humi_setH*10,3,65,2);
+ 387   1          display_value(temp_setH*10,5,65,1);
+ 388   1      
+ 389   1      }
+ 390          
+ 391          //设定温度上限    
+ 392          void display_setWDH1(){
+ 393   1      
+ 394   1          display_GB2312_string(1,16,"设定温湿度值"); 
+ 395   1          display_graphic_16x16(5,1,cursor);
+ 396   1          display_GB2312_string(3,18,"湿度高"); 
+ 397   1          display_GB2312_string(5,18,"温度高");
+ 398   1          display_GB2312_string(7,1,"选择温度");
+ 399   1          display_GB2312_string(7,72,"Ver 1.0");
+ 400   1      
+ 401   1          humi_setH = humi_alarmH;
+ 402   1          temp_setH = temp_alarmH;
+ 403   1      
+ 404   1          display_value(humi_setH*10,3,65,2);
+ 405   1          display_value(temp_setH*10,5,65,1);
+ 406   1      
+ 407   1      }
+ 408          
+ 409          //设定 湿度高限
+ 410          void display_setSDH2(){
+ 411   1        
+ 412   1            display_GB2312_string(1,16,"设定温湿度值"); 
+ 413   1          display_graphic_16x16(3,1,cursor);
+ 414   1          display_GB2312_string(3,18,"湿度高"); 
+ 415   1          display_GB2312_string(5,18,"温度高");
+ 416   1          display_GB2312_string(7,1,"湿度上限");
+ 417   1          display_GB2312_string(7,72,"Ver 1.0");
+ 418   1      
+ 419   1          
+ 420   1          switch(KeyValue){
+ 421   2            
+ 422   2            case KEY_UP: humi_setH = humi_setH+1;
+ 423   2              if(humi_setH>80)humi_setH = 20;
+ 424   2              display_GB2312_string(7,1,"设定中");
+ 425   2              break;
+ 426   2            case KEY_DOWN: humi_setH = humi_setH-1;
+C51 COMPILER V7.06   MAIN                                                                  12/09/2016 21:15:09 PAGE 8   
+
+ 427   2              if(humi_setH<20)humi_setH = 80;
+ 428   2              display_GB2312_string(7,1,"设定中");
+ 429   2              break;
+ 430   2            case KEY_OK: humi_alarmH = humi_setH;write_AlarmValue();
+ 431   2              display_GB2312_string(7,1,"设定完成");
+ 432   2              break;
+ 433   2             default:
+ 434   2             break;
+ 435   2          }
+ 436   1          
+ 437   1      
+ 438   1          display_value(humi_setH*10,3,65,2);
+ 439   1          display_value(temp_setH*10,5,65,1);
+ 440   1      
+ 441   1      }
+ 442          
+ 443          
+ 444          //设定温度上限    
+ 445          void display_setWDH2(){
+ 446   1      
+ 447   1          display_GB2312_string(1,16,"设定温湿度值"); 
+ 448   1          display_graphic_16x16(5,1,cursor);
+ 449   1          display_GB2312_string(3,18,"湿度高"); 
+ 450   1          display_GB2312_string(5,18,"温度高");
+ 451   1          display_GB2312_string(7,1,"温度上限");
+ 452   1          display_GB2312_string(7,72,"Ver 1.0");
+ 453   1      
+ 454   1          switch(KeyValue){
+ 455   2            
+ 456   2            case KEY_UP: temp_setH = temp_setH+1;
+ 457   2              if(temp_setH>125)temp_setH = -55;
+ 458   2              display_GB2312_string(7,1,"设定中");
+ 459   2              break;
+ 460   2            case KEY_DOWN: temp_setH = temp_setH-1;
+ 461   2              if(temp_setH<-55)temp_setH = 125;
+ 462   2              display_GB2312_string(7,1,"设定中");
+ 463   2              break;
+ 464   2            case KEY_OK: temp_alarmH = temp_setH;write_AlarmValue();
+ 465   2              display_GB2312_string(7,1,"设定完成");
+ 466   2              break;
+ 467   2             default:
+ 468   2             break;
+ 469   2          }
+ 470   1          
+ 471   1      
+ 472   1          display_value(humi_setH*10,3,65,2);
+ 473   1          display_value(temp_setH*10,5,65,1);
+ 474   1      
+ 475   1      }
+ 476          
+ 477          
+ 478          //设定 湿度 下限
+ 479          void display_setSDL1(){
+ 480   1        
+ 481   1            display_GB2312_string(1,16,"设定温湿度值"); 
+ 482   1          display_graphic_16x16(3,1,cursor);
+ 483   1          display_GB2312_string(3,18,"湿度低"); 
+ 484   1          display_GB2312_string(5,18,"温度低");
+ 485   1          display_GB2312_string(7,1,"选择湿度");
+ 486   1          display_GB2312_string(7,72,"Ver 1.0");
+ 487   1          
+ 488   1          humi_setL = humi_alarmL;
+C51 COMPILER V7.06   MAIN                                                                  12/09/2016 21:15:09 PAGE 9   
+
+ 489   1          temp_setL = temp_alarmL;
+ 490   1      
+ 491   1          display_value(humi_setL*10,3,65,2);
+ 492   1          display_value(temp_setL*10,5,65,1);
+ 493   1      
+ 494   1      }
+ 495          
+ 496          //设定温度下限    
+ 497          void display_setWDL1(){
+ 498   1      
+ 499   1          display_GB2312_string(1,16,"设定温湿度值"); 
+ 500   1          display_graphic_16x16(5,1,cursor);
+ 501   1          display_GB2312_string(3,18,"湿度低"); 
+ 502   1          display_GB2312_string(5,18,"温度低");
+ 503   1          display_GB2312_string(7,1,"选择温度");
+ 504   1          display_GB2312_string(7,72,"Ver 1.0");
+ 505   1      
+ 506   1          humi_setL = humi_alarmL;
+ 507   1          temp_setL = temp_alarmL;
+ 508   1      
+ 509   1          display_value(humi_setL*10,3,65,2);
+ 510   1          display_value(temp_setL*10,5,65,1);
+ 511   1      
+ 512   1      }
+ 513          
+ 514          
+ 515          //设定 湿度 下限
+ 516          void display_setSDL2(){
+ 517   1        
+ 518   1            display_GB2312_string(1,16,"设定温湿度值"); 
+ 519   1          display_graphic_16x16(3,1,cursor);
+ 520   1          display_GB2312_string(3,18,"湿度低"); 
+ 521   1          display_GB2312_string(5,18,"温度低");
+ 522   1          display_GB2312_string(7,1,"湿度下限");
+ 523   1          display_GB2312_string(7,72,"Ver 1.0");
+ 524   1      
+ 525   1          
+ 526   1          switch(KeyValue){
+ 527   2            
+ 528   2            case KEY_UP: humi_setL = humi_setL+1;
+ 529   2              if(humi_setL>80)humi_setL = 20;
+ 530   2              display_GB2312_string(7,1,"设定中");
+ 531   2              break;
+ 532   2            case KEY_DOWN: humi_setL = humi_setL-1;
+ 533   2              if(humi_setL<20)humi_setL = 80;
+ 534   2              display_GB2312_string(7,1,"设定中");
+ 535   2              break;
+ 536   2            case KEY_OK: humi_alarmL = humi_setL;write_AlarmValue();
+ 537   2              display_GB2312_string(7,1,"设定完成");
+ 538   2              break;
+ 539   2             default:
+ 540   2             break;
+ 541   2          }
+ 542   1          
+ 543   1      
+ 544   1          display_value(humi_setL*10,3,65,2);
+ 545   1          display_value(temp_setL*10,5,65,1);
+ 546   1      
+ 547   1      }
+ 548          
+ 549          
+ 550          //设定温度下限    
+C51 COMPILER V7.06   MAIN                                                                  12/09/2016 21:15:09 PAGE 10  
+
+ 551          void display_setWDL2(){
+ 552   1      
+ 553   1          display_GB2312_string(1,16,"设定温湿度值"); 
+ 554   1          display_graphic_16x16(5,1,cursor);
+ 555   1          display_GB2312_string(3,18,"湿度低"); 
+ 556   1          display_GB2312_string(5,18,"温度低");
+ 557   1          display_GB2312_string(7,1,"温度下限");
+ 558   1          display_GB2312_string(7,72,"Ver 1.0");
+ 559   1      
+ 560   1          switch(KeyValue){
+ 561   2            
+ 562   2            case KEY_UP: temp_setL = temp_setL+1;
+ 563   2              if(temp_setL>125)temp_setL = -55;
+ 564   2              display_GB2312_string(7,1,"设定中");
+ 565   2              break;
+ 566   2            case KEY_DOWN: temp_setL = temp_setL-1;
+ 567   2              if(temp_setL<-55)temp_setL = 125;
+ 568   2              display_GB2312_string(7,1,"设定中");
+ 569   2              break;
+ 570   2            case KEY_OK: temp_alarmL = temp_setL;write_AlarmValue();
+ 571   2              display_GB2312_string(7,1,"设定完成");
+ 572   2              break;
+ 573   2             default:
+ 574   2             break;
+ 575   2          }
+ 576   1          
+ 577   1      
+ 578   1          display_value(humi_setL*10,3,65,2);
+ 579   1          display_value(temp_setL*10,5,65,1);
+ 580   1      
+ 581   1      }
+ 582          
+ 583          
+ 584          void display_value( int val,unsigned char y,unsigned char x,unsigned char type){
+ 585   1        
+ 586   1        unsigned char tmp[5]={'0','0','0','.','0'};
+ 587   1        if(t_flag || val<0)
+ 588   1        {
+ 589   2          tmp[0] = '-';
+ 590   2          if(val <0 )
+ 591   2          val = val*(-1); 
+ 592   2        }
+ 593   1        else
+ 594   1        {
+ 595   2          tmp[0] = val/1000+0x30;
+ 596   2        }
+ 597   1        t_flag = 0;
+ 598   1        tmp[1] = val%1000/100+0x30;
+ 599   1        tmp[2] = val%1000%100/10+0x30;
+ 600   1        tmp[4] = val%100%100%10+0x30;
+ 601   1        display_GB2312_string(y,x,tmp);
+ 602   1        switch(type){
+ 603   2          case 1:display_GB2312_string(y,x+40,"℃");
+ 604   2            break;
+ 605   2          case 2:display_GB2312_string(y,x+40,"%");
+ 606   2            break;
+ 607   2        }
+ 608   1        
+ 609   1      }
+ 610          
+
+
+C51 COMPILER V7.06   MAIN                                                                  12/09/2016 21:15:09 PAGE 11  
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3333    ----
+   CONSTANT SIZE    =    357    ----
+   XDATA SIZE       =     29      13
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

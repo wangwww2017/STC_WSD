@@ -1,0 +1,3 @@
+Removed Pin From Net: NetName=NetNPN1_3 Pin=R28-2
+Added Pin To Net: NetName=NetLS1_2 Pin=R28-2
+Added Room: Name=WSD_STC12

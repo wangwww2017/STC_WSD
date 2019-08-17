@@ -1,0 +1,121 @@
+C51 COMPILER V7.06   EEPROM                                                                12/09/2016 21:15:09 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE EEPROM
+OBJECT MODULE PLACED IN .\hex\eeprom.obj
+COMPILER INVOKED BY: D:\Keil4\C51\BIN\C51.EXE eeprom.c LARGE BROWSE DEBUG OBJECTEXTEND TABS(2) OBJECT(.\hex\eeprom.obj)
+
+stmt level    source
+
+   1          #include "eeprom.h"
+   2          
+   3          
+   4          
+   5          //功能描述：允许ISP/IAP 
+   6          void Open_IAP(void)
+   7          {
+   8   1            //IAPEN   SWBS    SWRST   CMD_FAIL -      WT2     WT1     WT0
+   9   1          IAP_CONTR = 0x83;           //充许ISP/IAP，系统时钟<20MHz时，设置等待时间WT2,WT1,WT0(010)
+  10   1      
+  11   1      }
+  12          
+  13          
+  14          //功能描述：禁止ISP/IAP
+  15          void Close_IAP(void)
+  16          {
+  17   1          IAP_CONTR = 0x00;           //禁止ISP/IAP
+  18   1        
+  19   1            IAP_ADDRH = 0xFF;
+  20   1          IAP_ADDRL = 0xFF;
+  21   1      }
+  22          
+  23          //功能描述：从EEPROM指定的单元读取一个字节数据
+  24          
+  25          char Read_IAP_Byte(uint addr)
+  26          {
+  27   1          //-       -       -        -      -       -       MS1     MS0
+  28   1          IAP_CMD = 0x01;
+  29   1          
+  30   1          IAP_ADDRH = (addr & 0xFF00)>>8;
+  31   1          IAP_ADDRL = addr & 0x00FF;
+  32   1          
+  33   1          IAP_TRIG = 0x5A;
+  34   1          IAP_TRIG = 0xA5;                     //对IAP_TRIG先写0x5A再写0xA5，ISP/IAP命令才会生效
+  35   1          
+  36   1          return IAP_DATA;
+  37   1      }
+  38          
+  39          
+  40          //功能描述：把一个字节数据写入EEPROM指定的单元,写入数据前应先擦除扇区
+  41          
+  42          void Write_IAP_Byte(uint addr, char writeVal)
+  43          {
+  44   1          //-       -       -        -      -       -       MS1     MS0
+  45   1          IAP_CMD = 0x02;
+  46   1          
+  47   1          IAP_ADDRH = (addr & 0xFF00)>>8;
+  48   1          IAP_ADDRL = addr & 0x00FF;
+  49   1          
+  50   1          IAP_DATA = writeVal;
+  51   1          
+  52   1            IAP_TRIG = 0x5A;
+  53   1          IAP_TRIG = 0xA5;                     //对IAP_TRIG先写0x5A再写0xA5，ISP/IAP命令才会生效
+  54   1      
+  55   1      }
+C51 COMPILER V7.06   EEPROM                                                                12/09/2016 21:15:09 PAGE 2   
+
+  56          
+  57          //功能描述：擦除扇区,没有字节擦除
+  58          void Erase_IAP_Sector(uint addr)
+  59          {
+  60   1          //-       -       -        -      -       -       MS1     MS0
+  61   1          IAP_CMD = 0x03;
+  62   1      
+  63   1          IAP_ADDRH = (addr & 0xFF00)>>8;
+  64   1          IAP_ADDRL = addr & 0x00FF;
+  65   1      
+  66   1          IAP_TRIG = 0x5A;
+  67   1          IAP_TRIG = 0xA5;                     //对IAP_TRIG先写0x5A再写0xA5，ISP/IAP命令才会生效
+  68   1      }
+  69          
+  70          //功能描述：擦除指定单元内容
+  71          void Erase_IAP_Byte(uint addr)
+  72          {
+  73   1        //STC内部扩展1K(0x0000～0x03FF)ROM
+  74   1        //临时存放EEPROM一个扇区512Byte数据
+  75   1        uchar xdata EEPROM_sector[512] = {0};
+  76   1        uint sectorAddr;            //扇区首地址
+  77   1        uint unit;                      //某个扇区的某个单元0～511
+  78   1        uint i;
+  79   1        sectorAddr = ((int)(addr / 512)) * 512;
+  80   1        unit = addr % 512;
+  81   1        for (i=0; i<512; i++)
+  82   1        {
+  83   2                EEPROM_sector[i] = Read_IAP_Byte(sectorAddr+i);        //读取扇区
+  84   2        }
+  85   1      
+  86   1        Erase_IAP_Sector(sectorAddr);                  //擦除扇区
+  87   1          EEPROM_sector[unit] = 0xFF;                         //要擦除的单元置为0xFF
+  88   1        for (i=0; i<512; i++)
+  89   1        {
+  90   2           Write_IAP_Byte(sectorAddr+i, EEPROM_sector[i]);         //重新写入扇区
+  91   2        }
+  92   1      
+  93   1      }
+  94          
+  95          
+  96          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    293    ----
+   CONSTANT SIZE    =    512    ----
+   XDATA SIZE       =   ----     518
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

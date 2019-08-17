@@ -1,0 +1,7 @@
+".\hex\lcd_086.obj",
+".\hex\dht11.obj",
+".\hex\ds1820.obj",
+".\hex\eeprom.obj",
+".\hex\main.obj" 
+TO ".\hex\dht11" 
+PRINT(".\dht11.m51") RAMSIZE(256) 

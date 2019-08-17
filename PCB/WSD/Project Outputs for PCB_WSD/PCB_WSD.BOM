@@ -1,0 +1,31 @@
+Bill of Material for PCB_WSD.PrjPCB
+On 2013/12/17 at 17:13:10
+
+ Comment             Pattern     Quantity  Components
+------------------------------------------------------------------------------
+ 104                 0603             1    C7                           Capacitor            
+ 104                 P0603            1    C10                          Capacitor            
+ 10K                 0603             1    R4                           Resistor             
+ 10K                 P0603            1    R11                          Resistor             
+ 10uf                C310M            4    C2, C3, C5, C6               Polarized Capacitor (Surface Mount) 
+ 1K                  P0603            3    R8, R9, R12                  Resistor             
+ 20pF                P0603            2    C8, C9                       Capacitor            
+ 32.768              32.768KHZ        1    Y2                           Crystal Oscillator   
+ 78L05-SOT89         SOT89            1    1                                                 
+ 8MHz                XTA              1    Y1                           Crystal Oscillator   
+ Bell                BEEP             1    LS1                          Electrical Bell      
+ Cap                 0603             2    C1, C4                       Capacitor            
+ Cap                 P0603            1    C11                          Capacitor            
+ DHT11               HDR1X4           1    DHT1                                              
+ DS1302              SOP8-CN          1    DS3                                               
+ DS18B20             HDR1X3           1    2                                                 
+ Header 4            HDR1X4           1    P3                           Header, 4-Pin        
+ JLX12864G-086-PC    HDR1X12          1    JLX1                                              
+ LED0                LED2012          2    DS1, DS2                     Typical INFRARED GaAs LED 
+ MHDR1X2             KF301-2P         2    P1, P2                       Header, 2-Pin        
+ NPN8050             SOT23-T          2    NPN1, NPN2                                        
+ Res2                0603             4    R1, R2, R3, R10              Resistor             
+ Res2                P0603            3    R5, R6, R7                   Resistor             
+ STC12C5A60S2        LQFP48_M         1    STC1                                              
+ SW-PB               KEY-SMD          3    S1, S2, S3                   Switch               
+ SW-SS12D07          SS-12F44         1    SW1                                               

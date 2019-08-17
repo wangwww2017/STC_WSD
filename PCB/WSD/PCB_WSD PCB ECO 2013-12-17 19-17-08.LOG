@@ -1,0 +1,5 @@
+Removed Pin From Net: NetName=VCC Pin=P8-3
+Removed Pin From Net: NetName=VCC Pin=P8-4
+Added Pin To Net: NetName=5V Pin=P8-3
+Added Pin To Net: NetName=5V Pin=P8-4
+Added Room: Name=WSD_STC12

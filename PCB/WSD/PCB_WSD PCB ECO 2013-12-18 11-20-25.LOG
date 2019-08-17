@@ -1,0 +1,24 @@
+Removed Pin From Net: NetName=KEY-UP Pin=P5-9
+Removed Pin From Net: NetName=KEY-OK Pin=P5-10
+Removed Pin From Net: NetName=KEY-DOWN Pin=P5-11
+Removed Pin From Net: NetName=KEY-UP Pin=STC1-9
+Removed Pin From Net: NetName=KEY-OK Pin=STC1-10
+Removed Pin From Net: NetName=KEY-DOWN Pin=STC1-11
+Added Pin To Net: NetName=Net1_1 Pin=1-1
+Added Pin To Net: NetName=5V Pin=1-3
+Added Pin To Net: NetName=KEY-DOWN Pin=P6-9
+Added Pin To Net: NetName=KEY-OK Pin=P6-10
+Added Pin To Net: NetName=KEY-UP Pin=P6-11
+Added Pin To Net: NetName=KEY-UP Pin=STC1-38
+Added Pin To Net: NetName=KEY-OK Pin=STC1-39
+Added Pin To Net: NetName=KEY-DOWN Pin=STC1-40
+Added Pin To Net: NetName=P32 Pin=P5-9
+Added Pin To Net: NetName=P32 Pin=STC1-9
+Added Net: Name=P32
+Added Pin To Net: NetName=P33 Pin=P5-10
+Added Pin To Net: NetName=P33 Pin=STC1-10
+Added Net: Name=P33
+Added Pin To Net: NetName=P34 Pin=P5-11
+Added Pin To Net: NetName=P34 Pin=STC1-11
+Added Net: Name=P34
+Added Room: Name=WSD_STC12

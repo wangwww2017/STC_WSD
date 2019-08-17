@@ -1,0 +1,164 @@
+C51 COMPILER V7.06   DHT11                                                                 12/09/2016 21:15:08 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE DHT11
+OBJECT MODULE PLACED IN .\hex\dht11.obj
+COMPILER INVOKED BY: D:\Keil4\C51\BIN\C51.EXE dht11.c LARGE BROWSE DEBUG OBJECTEXTEND TABS(2) OBJECT(.\hex\dht11.obj)
+
+stmt level    source
+
+   1          #include "dht11.h"
+   2          
+   3          #include <intrins.h>
+   4          #include "lcd_086.h"
+   5          
+   6          extern uint humi_dat,temp_dat;
+   7          uchar data_byte;
+   8          uchar Tem_Z,Tem_X,Hum_Z,Hum_X,Check;
+   9          
+  10          //文件名是dht11.c 
+  11          
+  12          //请根据自己的dht11接的IO口来改动位定义
+  13          sbit DHT = P5^3; 
+  14          //防止在与硬件通信时发生死循环的计数范围 
+  15          #define NUMBER 50 
+  16          #define SIZE 5 
+  17          static unsigned char status; 
+  18          //存放五字节数据的数组
+  19          static unsigned char value_array[SIZE]; 
+  20          /*可在其他的文件引用温湿度值,实际是温度的整数的10倍
+  21          如dht11读回的温度是26,则temp_value = 260, 湿度同理*/ 
+  22          int temp_value, humi_value; 
+  23          
+  24          extern void Delay_1ms(unsigned int ms) 
+  25          { 
+  26   1        unsigned int x, y; 
+  27   1        for(x = ms; x > 0; x--) 
+  28   1        { 
+  29   2          for(y = 400; y > 0; y--); 
+  30   2        } 
+  31   1      } 
+  32          static void DHT11_Delay_10us(void) 
+  33          { 
+  34   1          unsigned char i; 
+  35   1          for(i=0;i<10;i++){
+  36   2              _nop_();
+  37   2            _nop_();
+  38   2           }
+  39   1      } 
+  40          
+  41          void DHT11_Delay_us(uint us)  //(us*9+16)us
+  42          {
+  43   1      
+  44   1         while(us--){
+  45   2            _nop_();
+  46   2          _nop_();
+  47   2         }
+  48   1      //   while(us--);
+  49   1       //  while(us--);
+  50   1      
+  51   1      }
+  52          
+  53          /********主机发出开始信号*******/ 
+  54          void DHT11_Start()  
+  55          {
+C51 COMPILER V7.06   DHT11                                                                 12/09/2016 21:15:08 PAGE 2   
+
+  56   1        DHT=1;
+  57   1        DHT11_Delay_us(10);
+  58   1        DHT=0;
+  59   1        Delay_1ms(20);               //保持电平时间大于18ms,延时20ms
+  60   1        DHT=1;
+  61   1        DHT11_Delay_us(40);
+  62   1        DHT=1;                  //拉高等待DHT11响应
+  63   1      
+  64   1      }
+  65          //DHT11接收一个字节数据
+  66          uchar receive_data()
+  67          {
+  68   1        uchar i,temp,count;
+  69   1        data_byte=0;
+  70   1        for(i=0;i<8;i++)
+  71   1         {
+  72   2         count=2;
+  73   2         while((!DHT)&&count++);           //等待50us低电平结束
+  74   2         DHT11_Delay_us(30);                      //等待40us高电平，后判断电平高低,高:DHT为1,低:DHT为0
+  75   2          
+  76   2         temp=0; 
+  77   2         if(DHT==1)    temp=1;             //DHT为高:1,位为1
+  78   2         count=2;
+  79   2         while((DHT)&&count++);            //等待DHT高电平结束     
+  80   2         if(count==1)      break;          //DHT为低:0,位为0
+  81   2         data_byte<<=1;                    //字节左移
+  82   2         data_byte|=temp;
+  83   2         }  ST =0;
+  84   1        return data_byte;                  //返回读取值
+  85   1      }
+  86          
+  87          //DHT11接收数据
+  88          void Rec_DHT()
+  89          {
+  90   1       uchar flag;
+  91   1       uchar T_H,T_L,H_H,H_L,check,num_check;   //定义采集参数中间变量
+  92   1        DHT11_Start();                          //主机发出开始信号
+  93   1       if(!DHT)                                 //等待从机响应信号输出低电平
+  94   1        {
+  95   2        flag = 2;
+  96   2        while((!DHT) && flag++);    //判断从机是否发出 80us 的低电平响应信号是否结束
+  97   2        flag = 2;
+  98   2        while(DHT && flag++);       //判断从机是否发出 80us 的高电平，若发出则开始采集数据
+  99   2        H_H=receive_data();         //采集湿度整数部分
+ 100   2        H_L=receive_data();         //采集湿度小数部分
+ 101   2        T_H=receive_data();         //采集温度整数部分
+ 102   2        T_L=receive_data();         //采集温度小数部分
+ 103   2        check=receive_data();       //采集校验位
+ 104   2        DHT = 1;
+ 105   2        num_check=H_H+H_L+T_H+T_L;
+ 106   2       // if(num_check=check)         //进行校核
+ 107   2        // {
+ 108   2         humi_dat = H_H*10; 
+ 109   2         Hum_X  = H_L;  
+ 110   2         temp_dat = T_H*10;
+ 111   2         Tem_X    = T_L;
+ 112   2        // }
+ 113   2       }
+ 114   1      }
+ 115          
+ 116          /*****************************************************************************/ 
+ 117          
+C51 COMPILER V7.06   DHT11                                                                 12/09/2016 21:15:08 PAGE 3   
+
+ 118          
+ 119            /*
+ 120                   //湿度整数部分
+ 121                   str1[0] = (char)(0X30+RH_data/10); 
+ 122                   str1[1] = (char)(0X30+RH_data%10);
+ 123                   str1[2] =  0x2e; //小数点
+ 124                    //湿度小数部分
+ 125                   str1[3] = (char)(0X30+RL_data/10); 
+ 126                    str1[5] = 0X25; //"%"
+ 127                   str1[6] = 0X52; //"R"
+ 128                   str1[7] = 0X48; //"H"
+ 129                   //温度整数部分
+ 130                   str2[0] = (char)(0X30+TH_data/10); 
+ 131                   str2[1] = (char)(0X30+TH_data%10);
+ 132                   str2[2] =  0x2e; //小数点
+ 133                   //温度小数部分
+ 134                    str2[3] = (char)(0X30+TL_data/10); 
+ 135                    str2[5] = 0X27;  //"'"
+ 136                    str2[6] = 0X43;  //"C"
+ 137                */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    289    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     16       5
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

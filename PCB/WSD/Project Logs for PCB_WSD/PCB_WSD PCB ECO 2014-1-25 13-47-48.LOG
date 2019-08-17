@@ -1,0 +1,11 @@
+Removed Pin From Net: NetName=GND Pin=1-0
+Removed Pin From Net: NetName=BEEP Pin=NPN1-1
+Removed Pin From Net: NetName=GND Pin=R9-1
+Removed Pin From Net: NetName=BEEP Pin=R9-2
+Removed Member From Class: ClassName=WSD_STC12 Member=R9
+Change Component Comment : Designator=R8 Old Comment=1K New Comment=100
+Change Component Comment : Designator=Y1 Old Comment=8MHz New Comment=12MHz
+Change Component Designator: OldDesignator=18B20 NewDesignator=2
+Added Pin To Net: NetName=NetNPN1_1 Pin=NPN1-1
+Added Net: Name=NetNPN1_1
+Added Room: Name=WSD_STC12

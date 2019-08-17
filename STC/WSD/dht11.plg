@@ -1,0 +1,24 @@
+<html>
+<body>
+<pre>
+<h1>µVision2 Build Log</h1>
+<h2>Project:</h2>
+G:\STC\prj\dht11\dht11.uv2
+Project File Date:  11/01/2013
+
+<h2>Output:</h2>
+Build target 'Target 1'
+compiling dht11.c...
+compiling lcd_086.c...
+linking...
+*** ERROR L104: MULTIPLE PUBLIC DEFINITIONS
+    SYMBOL:  MAIN
+    MODULE:  lcd_086.obj (LCD_086)
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?MAIN?LCD_086
+*** ERROR L118: REFERENCE MADE TO ERRONEOUS EXTERNAL
+    SYMBOL:  MAIN
+    MODULE:  C:\KEIL\C51\LIB\C51S.LIB (?C_INIT)
+    ADDRESS: 0B70H
+Program Size: data=125.0 xdata=0 code=3896
+Target not created

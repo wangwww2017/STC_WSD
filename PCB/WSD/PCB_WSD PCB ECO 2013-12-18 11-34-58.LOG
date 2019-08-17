@@ -1,0 +1,11 @@
+Removed Pin From Net: NetName=GND Pin=P4-2
+Removed Pin From Net: NetName=P16 Pin=P7-1
+Removed Pin From Net: NetName=GND Pin=P7-2
+Removed Pin From Net: NetName=P17 Pin=P10-1
+Added Pin To Net: NetName=Net1_1 Pin=1-1
+Added Pin To Net: NetName=5V Pin=1-3
+Added Pin To Net: NetName=P16 Pin=P4-2
+Added Pin To Net: NetName=P17 Pin=P7-1
+Added Pin To Net: NetName=P32 Pin=P7-2
+Added Pin To Net: NetName=P33 Pin=P10-1
+Added Room: Name=WSD_STC12

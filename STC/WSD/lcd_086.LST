@@ -1,0 +1,406 @@
+C51 COMPILER V7.06   LCD_086                                                               12/09/2016 21:15:08 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE LCD_086
+OBJECT MODULE PLACED IN .\hex\lcd_086.obj
+COMPILER INVOKED BY: D:\Keil4\C51\BIN\C51.EXE lcd_086.c LARGE BROWSE DEBUG OBJECTEXTEND TABS(2) OBJECT(.\hex\lcd_086.obj
+                    -)
+
+stmt level    source
+
+   1          #include "lcd_086.h"
+   2          //#include <../STC12C5A60S2.h>
+   3          
+   4          
+   5          
+   6          sbit lcd_sclk=P2^4;  /*½Ó¿Ú¶¨Òå:lcd_sclk¾ÍÊÇLCDµÄsclk*/
+   7          sbit lcd_sid=P5^0;   /*½Ó¿Ú¶¨Òå:lcd_sid¾ÍÊÇLCDµÄsid*/
+   8          sbit lcd_rs=P5^1;    /*½Ó¿Ú¶¨Òå:lcd_rs¾ÍÊÇLCDµÄrs*/
+   9          sbit lcd_reset=P2^5; /*½Ó¿Ú¶¨Òå:lcd_reset¾ÍÊÇLCDµÄreset*/
+  10          sbit lcd_cs1=P2^6;   /*½Ó¿Ú¶¨Òå:lcd_cs1¾ÍÊÇLCDµÄcs1*/
+  11          //sbit lcd_led=P2^3;
+  12          sbit Rom_IN=P4^0;    /*×Ö¿âIC½Ó¿Ú¶¨Òå:Rom_IN¾ÍÊÇ×Ö¿âICµÄSI*/
+  13          sbit Rom_OUT=P2^0;   /*×Ö¿âIC½Ó¿Ú¶¨Òå:Rom_OUT¾ÍÊÇ×Ö¿âICµÄSO*/
+  14          sbit Rom_SCK=P2^1;   /*×Ö¿âIC½Ó¿Ú¶¨Òå:Rom_SCK¾ÍÊÇ×Ö¿âICµÄSCK*/
+  15          sbit Rom_CS=P2^2;    /*×Ö¿âIC½Ó¿Ú¶¨ÒåRom_CS¾ÍÊÇ×Ö¿âICµÄCS#*/
+  16          
+  17          uchar code bmp1[];
+  18          
+  19          uchar code jiong1[]={/*--  ÎÄ×Ö:  ‡å  --*/
+  20          /*--  ËÎÌå12;  ´Ë×ÖÌåÏÂ¶ÔÓ¦µÄµãÕóÎª£º¿íx¸ß=16x16   --*/
+  21          0x00,0xFE,0x82,0x42,0xA2,0x9E,0x8A,0x82,0x86,0x8A,0xB2,0x62,0x02,0xFE,0x00,0x00,
+  22          0x00,0x7F,0x40,0x40,0x7F,0x40,0x40,0x40,0x40,0x40,0x7F,0x40,0x40,0x7F,0x00,0x00};
+  23          
+  24          uchar code lei1[]={/*--  ÎÄ×Ö:  ®š  --*/
+  25          /*--  ËÎÌå12;  ´Ë×ÖÌåÏÂ¶ÔÓ¦µÄµãÕóÎª£º¿íx¸ß=16x16   --*/
+  26          0x80,0x80,0x80,0xBF,0xA5,0xA5,0xA5,0x3F,0xA5,0xA5,0xA5,0xBF,0x80,0x80,0x80,0x00,
+  27          0x7F,0x24,0x24,0x3F,0x24,0x24,0x7F,0x00,0x7F,0x24,0x24,0x3F,0x24,0x24,0x7F,0x00};
+  28          
+  29          
+  30          /*Ð´Ö¸Áîµ½LCDÄ£¿é*/
+  31          void transfer_command_lcd(int data1)   
+  32          {
+  33   1        char i;
+  34   1        lcd_rs=0;
+  35   1        for(i=0;i<8;i++)
+  36   1         {
+  37   2          lcd_sclk=0;
+  38   2          if(data1&0x80) lcd_sid=1;
+  39   2          else lcd_sid=0;
+  40   2          lcd_sclk=1;
+  41   2          data1=data1<<=1;
+  42   2         }
+  43   1      }
+  44          
+  45          /*Ð´Êý¾Ýµ½LCDÄ£¿é*/
+  46          void transfer_data_lcd(int data1)
+  47          {
+  48   1        char i;
+  49   1        lcd_rs=1;
+  50   1        for(i=0;i<8;i++)
+  51   1         {
+  52   2          lcd_sclk=0;
+  53   2          if(data1&0x80) lcd_sid=1;
+  54   2          else lcd_sid=0;
+C51 COMPILER V7.06   LCD_086                                                               12/09/2016 21:15:08 PAGE 2   
+
+  55   2          lcd_sclk=1;
+  56   2          data1=data1<<=1;
+  57   2         }
+  58   1      }
+  59          
+  60          /*ÑÓÊ±*/
+  61          void lcd_delay(int n_ms)               
+  62          {
+  63   1       int j,k;
+  64   1       for(j=0;j<n_ms;j++)
+  65   1       for(k=0;k<110;k++);
+  66   1      }
+  67          
+  68          
+  69          /*µÈ´ýÒ»¸ö°´¼ü£¬ÎÒµÄÖ÷°åÊÇÓÃP2.0ÓëGNDÖ®¼ä½ÓÒ»¸ö°´¼ü*/
+  70          /*void waitkey()
+  71          {
+  72           repeat:
+  73              if (P2&0x01) goto repeat;
+  74            else lcd_delay(6);
+  75            if (P2&0x01) goto repeat;
+  76            else
+  77            lcd_delay(40);;
+  78          }
+  79          */
+  80          
+  81          /*LCDÄ£¿é³õÊ¼»¯*/
+  82          void initial_lcd()
+  83          {
+  84   1      
+  85   1        lcd_cs1=0;
+  86   1        Rom_CS = 1;
+  87   1        lcd_reset=0;        /*µÍµçÆ½¸´Î»*/
+  88   1        lcd_delay(20);
+  89   1        lcd_reset=1;        /*¸´Î»Íê±Ï*/
+  90   1        lcd_delay(20);        
+  91   1        transfer_command_lcd(0xe2);  /*Èí¸´Î»*/
+  92   1        lcd_delay(5);
+  93   1        transfer_command_lcd(0x2c);  /*ÉýÑ¹²½¾Û1*/
+  94   1        lcd_delay(5); 
+  95   1        transfer_command_lcd(0x2e);  /*ÉýÑ¹²½¾Û2*/
+  96   1        lcd_delay(5);
+  97   1        transfer_command_lcd(0x2f);  /*ÉýÑ¹²½¾Û3*/
+  98   1        lcd_delay(5);
+  99   1        transfer_command_lcd(0x23);  /*´Öµ÷¶Ô±È¶È£¬¿ÉÉèÖÃ·¶Î§0x20¡«0x27*/
+ 100   1        transfer_command_lcd(0x81);  /*Î¢µ÷¶Ô±È¶È*/
+ 101   1        transfer_command_lcd(0x2f);  /*0x28,Î¢µ÷¶Ô±È¶ÈµÄÖµ£¬¿ÉÉèÖÃ·¶Î§0x00¡«0x3f*/
+ 102   1        transfer_command_lcd(0xa2);  /*1/9Æ«Ñ¹±È£¨bias£©*/
+ 103   1        transfer_command_lcd(0xc8);  /*ÐÐÉ¨ÃèË³Ðò£º´ÓÉÏµ½ÏÂ*/
+ 104   1        transfer_command_lcd(0xa0);  /*ÁÐÉ¨ÃèË³Ðò£º´Ó×óµ½ÓÒ*/
+ 105   1        transfer_command_lcd(0x40);  /*ÆðÊ¼ÐÐ£ºµÚÒ»ÐÐ¿ªÊ¼*/
+ 106   1        transfer_command_lcd(0xaf);  /*¿ªÏÔÊ¾*/
+ 107   1        lcd_cs1=1;
+ 108   1      }
+ 109          
+ 110          void lcd_address(uint page,uint column)
+ 111          {
+ 112   1      
+ 113   1        column=column-0x01;
+ 114   1        transfer_command_lcd(0xb0+page-1);   /*ÉèÖÃÒ³µØÖ·*/
+ 115   1        transfer_command_lcd(0x10+(column>>4&0x0f));  /*ÉèÖÃÁÐµØÖ·µÄ¸ß4Î»*/
+ 116   1        transfer_command_lcd(column&0x0f);  /*ÉèÖÃÁÐµØÖ·µÄµÍ4Î»*/ 
+C51 COMPILER V7.06   LCD_086                                                               12/09/2016 21:15:08 PAGE 3   
+
+ 117   1      }
+ 118          
+ 119          /*È«ÆÁÇåÆÁ*/
+ 120          void clear_screen()
+ 121          {
+ 122   1        unsigned char i,j;
+ 123   1        lcd_cs1=0;
+ 124   1        Rom_CS = 1; 
+ 125   1        for(i=0;i<9;i++)
+ 126   1        {
+ 127   2          transfer_command_lcd(0xb0+i);
+ 128   2          transfer_command_lcd(0x10);
+ 129   2          transfer_command_lcd(0x00);
+ 130   2          for(j=0;j<132;j++)
+ 131   2          {
+ 132   3              transfer_data_lcd(0x00);
+ 133   3          }
+ 134   2        }
+ 135   1        lcd_cs1=1;
+ 136   1      }
+ 137          
+ 138          /*ÏÔÊ¾128x64µãÕóÍ¼Ïñ*/
+ 139          void display_128x64(uchar *dp)
+ 140          {
+ 141   1        uint i,j;
+ 142   1        lcd_cs1=0;
+ 143   1        for(j=0;j<8;j++)
+ 144   1        {
+ 145   2          lcd_address(j+1,1);
+ 146   2          for (i=0;i<128;i++)
+ 147   2          { 
+ 148   3            transfer_data_lcd(*dp);         /*Ð´Êý¾Ýµ½LCD,Ã¿Ð´ÍêÒ»¸ö8Î»µÄÊý¾ÝºóÁÐµØÖ·×Ô¶¯¼Ó1*/
+ 149   3            dp++;
+ 150   3          }
+ 151   2        }
+ 152   1        lcd_cs1=1;
+ 153   1      }
+ 154          
+ 155          
+ 156          /*ÏÔÊ¾16x16µãÕóÍ¼Ïñ¡¢ºº×Ö¡¢ÉúÆ§×Ö»ò16x16µãÕóµÄÆäËûÍ¼±ê*/
+ 157          void display_graphic_16x16(uint page,uint column,uchar *dp)
+ 158          {
+ 159   1        uint i,j;
+ 160   1        lcd_cs1=0;
+ 161   1        Rom_CS = 1;   
+ 162   1        for(j=0;j<2;j++)
+ 163   1        {
+ 164   2          lcd_address(page+j,column);
+ 165   2          for (i=0;i<16;i++)
+ 166   2          { 
+ 167   3            transfer_data_lcd(*dp);         /*Ð´Êý¾Ýµ½LCD,Ã¿Ð´ÍêÒ»¸ö8Î»µÄÊý¾ÝºóÁÐµØÖ·×Ô¶¯¼Ó1*/
+ 168   3            dp++;
+ 169   3          }
+ 170   2        }
+ 171   1        lcd_cs1=1;
+ 172   1      }
+ 173          
+ 174          
+ 175          /*ÏÔÊ¾8x16µãÕóÍ¼Ïñ¡¢ASCII, »ò8x16µãÕóµÄ×ÔÔì×Ö·û¡¢ÆäËûÍ¼±ê*/
+ 176          void display_graphic_8x16(uint page,uchar column,uchar *dp)
+ 177          {
+ 178   1        uint i,j;
+C51 COMPILER V7.06   LCD_086                                                               12/09/2016 21:15:08 PAGE 4   
+
+ 179   1        lcd_cs1=0;  
+ 180   1        for(j=0;j<2;j++)
+ 181   1        {
+ 182   2          lcd_address(page+j,column);
+ 183   2          for (i=0;i<8;i++)
+ 184   2          { 
+ 185   3            transfer_data_lcd(*dp);         /*Ð´Êý¾Ýµ½LCD,Ã¿Ð´ÍêÒ»¸ö8Î»µÄÊý¾ÝºóÁÐµØÖ·×Ô¶¯¼Ó1*/
+ 186   3            dp++;
+ 187   3          }
+ 188   2        }
+ 189   1        lcd_cs1=1;
+ 190   1      }
+ 191          
+ 192          
+ 193          /*ÏÔÊ¾5*7µãÕóÍ¼Ïñ¡¢ASCII, »ò5x7µãÕóµÄ×ÔÔì×Ö·û¡¢ÆäËûÍ¼±ê*/
+ 194          void display_graphic_5x7(uint page,uchar column,uchar *dp)
+ 195          {
+ 196   1        uint col_cnt;
+ 197   1        uchar page_address;
+ 198   1        uchar column_address_L,column_address_H;
+ 199   1        page_address = 0xb0+page-1;
+ 200   1        
+ 201   1        lcd_cs1=0;  
+ 202   1        
+ 203   1        column_address_L =(column&0x0f)-1;
+ 204   1        column_address_H =((column>>4)&0x0f)+0x10;
+ 205   1        
+ 206   1        transfer_command_lcd(page_address);     /*Set Page Address*/
+ 207   1        transfer_command_lcd(column_address_H); /*Set MSB of column Address*/
+ 208   1        transfer_command_lcd(column_address_L); /*Set LSB of column Address*/
+ 209   1        
+ 210   1        for (col_cnt=0;col_cnt<6;col_cnt++)
+ 211   1        { 
+ 212   2          transfer_data_lcd(*dp);
+ 213   2          dp++;
+ 214   2        }
+ 215   1        lcd_cs1=1;
+ 216   1      }
+ 217          
+ 218          /****ËÍÖ¸Áîµ½¾§ÁªÑ¶×Ö¿âIC***/
+ 219          void send_command_to_ROM( uchar datu )
+ 220          {
+ 221   1        uchar i;
+ 222   1        for(i=0;i<8;i++ )
+ 223   1        {
+ 224   2          if(datu&0x80)
+ 225   2            Rom_IN = 1;
+ 226   2          else
+ 227   2            Rom_IN = 0;
+ 228   2            datu = datu<<1;
+ 229   2            Rom_SCK=0;
+ 230   2            Rom_SCK=1;
+ 231   2        }
+ 232   1      }
+ 233          
+ 234          /****´Ó¾§ÁªÑ¶×Ö¿âICÖÐÈ¡ºº×Ö»ò×Ö·ûÊý¾Ý£¨1¸ö×Ö½Ú£©***/
+ 235          static uchar get_data_from_ROM( )
+ 236          {
+ 237   1        
+ 238   1        uchar i;
+ 239   1        uchar ret_data=0;
+ 240   1        Rom_SCK=1;
+C51 COMPILER V7.06   LCD_086                                                               12/09/2016 21:15:08 PAGE 5   
+
+ 241   1        for(i=0;i<8;i++)
+ 242   1        {
+ 243   2          Rom_OUT=1;
+ 244   2          Rom_SCK=0;
+ 245   2          ret_data=ret_data<<1;
+ 246   2          if( Rom_OUT )
+ 247   2            ret_data=ret_data+1;
+ 248   2          else
+ 249   2            ret_data=ret_data+0;
+ 250   2          Rom_SCK=1;
+ 251   2        }
+ 252   1        return(ret_data);
+ 253   1      }
+ 254          
+ 255          
+ 256          
+ 257          /*´ÓÏà¹ØµØÖ·£¨addrHigh£ºµØÖ·¸ß×Ö½Ú,addrMid£ºµØÖ·ÖÐ×Ö½Ú,addrLow£ºµØÖ·µÍ×Ö½Ú£©ÖÐÁ¬Ðø¶Á³öDataLen¸ö×Ö½ÚµÄÊý¾Ýµ
+             -½ pBuffµÄµØÖ·*/
+ 258          /*Á¬Ðø¶ÁÈ¡*/
+ 259          void get_n_bytes_data_from_ROM(uchar addrHigh,uchar addrMid,uchar addrLow,uchar *pBuff,uchar DataLen )
+ 260          {
+ 261   1        uchar i;
+ 262   1        Rom_CS = 0;
+ 263   1        lcd_cs1=1;  
+ 264   1        Rom_SCK=0;
+ 265   1        send_command_to_ROM(0x03);
+ 266   1        send_command_to_ROM(addrHigh);
+ 267   1        send_command_to_ROM(addrMid);
+ 268   1        send_command_to_ROM(addrLow);
+ 269   1        for(i = 0; i < DataLen; i++ )
+ 270   1             *(pBuff+i) =get_data_from_ROM();
+ 271   1        Rom_CS = 1;
+ 272   1      }
+ 273          
+ 274          
+ 275          /******************************************************************/
+ 276          
+ 277          ulong  fontaddr=0;
+ 278          void display_GB2312_string(uchar y,uchar x,uchar *text)
+ 279          {
+ 280   1        uchar i= 0;
+ 281   1        uchar addrHigh,addrMid,addrLow ;
+ 282   1        uchar fontbuf[32];      
+ 283   1        while((text[i]>0x00))
+ 284   1        {
+ 285   2          if(((text[i]>=0xb0) &&(text[i]<=0xf7))&&(text[i+1]>=0xa1))
+ 286   2          {           
+ 287   3            /*¹ú±ê¼òÌå£¨GB2312£©ºº×ÖÔÚ¾§ÁªÑ¶×Ö¿âICÖÐµÄµØÖ·ÓÉÒÔÏÂ¹«Ê½À´¼ÆËã£º*/
+ 288   3            /*Address = ((MSB - 0xB0) * 94 + (LSB - 0xA1)+ 846)*32+ BaseAdd;BaseAdd=0*/
+ 289   3            /*ÓÉÓÚµ£ÐÄ8Î»µ¥Æ¬»úÓÐ³Ë·¨Òç³öÎÊÌâ£¬ËùÒÔ·ÖÈý²¿È¡µØÖ·*/
+ 290   3            fontaddr = (text[i]- 0xb0)*94; 
+ 291   3            fontaddr += (text[i+1]-0xa1)+846;
+ 292   3            fontaddr = (ulong)(fontaddr*32);
+ 293   3            
+ 294   3            addrHigh = (fontaddr&0xff0000)>>16;  /*µØÖ·µÄ¸ß8Î»,¹²24Î»*/
+ 295   3            addrMid = (fontaddr&0xff00)>>8;      /*µØÖ·µÄÖÐ8Î»,¹²24Î»*/
+ 296   3            addrLow = fontaddr&0xff;       /*µØÖ·µÄµÍ8Î»,¹²24Î»*/
+ 297   3            get_n_bytes_data_from_ROM(addrHigh,addrMid,addrLow,fontbuf,32 );/*È¡32¸ö×Ö½ÚµÄÊý¾Ý£¬´æµ½"fontbuf[32]"*/
+ 298   3            display_graphic_16x16(y,x,fontbuf);/*ÏÔÊ¾ºº×Öµ½LCDÉÏ£¬yÎªÒ³µØÖ·£¬xÎªÁÐµØÖ·£¬fontbuf[]ÎªÊý¾Ý*/
+ 299   3            i+=2;
+ 300   3            x+=16;
+ 301   3          }
+C51 COMPILER V7.06   LCD_086                                                               12/09/2016 21:15:08 PAGE 6   
+
+ 302   2          else if(((text[i]>=0xa1) &&(text[i]<=0xa3))&&(text[i+1]>=0xa1))
+ 303   2          {           
+ 304   3            /*¹ú±ê¼òÌå£¨GB2312£©15x16µãµÄ×Ö·ûÔÚ¾§ÁªÑ¶×Ö¿âICÖÐµÄµØÖ·ÓÉÒÔÏÂ¹«Ê½À´¼ÆËã£º*/
+ 305   3            /*Address = ((MSB - 0xa1) * 94 + (LSB - 0xA1))*32+ BaseAdd;BaseAdd=0*/
+ 306   3            /*ÓÉÓÚµ£ÐÄ8Î»µ¥Æ¬»úÓÐ³Ë·¨Òç³öÎÊÌâ£¬ËùÒÔ·ÖÈý²¿È¡µØÖ·*/
+ 307   3            fontaddr = (text[i]- 0xa1)*94; 
+ 308   3            fontaddr += (text[i+1]-0xa1);
+ 309   3            fontaddr = (ulong)(fontaddr*32);
+ 310   3            
+ 311   3            addrHigh = (fontaddr&0xff0000)>>16;  /*µØÖ·µÄ¸ß8Î»,¹²24Î»*/
+ 312   3            addrMid = (fontaddr&0xff00)>>8;      /*µØÖ·µÄÖÐ8Î»,¹²24Î»*/
+ 313   3            addrLow = fontaddr&0xff;       /*µØÖ·µÄµÍ8Î»,¹²24Î»*/
+ 314   3            get_n_bytes_data_from_ROM(addrHigh,addrMid,addrLow,fontbuf,32 );/*È¡32¸ö×Ö½ÚµÄÊý¾Ý£¬´æµ½"fontbuf[32]"*/
+ 315   3            display_graphic_16x16(y,x,fontbuf);/*ÏÔÊ¾ºº×Öµ½LCDÉÏ£¬yÎªÒ³µØÖ·£¬xÎªÁÐµØÖ·£¬fontbuf[]ÎªÊý¾Ý*/
+ 316   3            i+=2;
+ 317   3            x+=16;
+ 318   3          }
+ 319   2          else if((text[i]>=0x20) &&(text[i]<=0x7e))  
+ 320   2          {           
+ 321   3            unsigned char fontbuf[16];      
+ 322   3            fontaddr = (text[i]- 0x20);
+ 323   3            fontaddr = (unsigned long)(fontaddr*16);
+ 324   3            fontaddr = (unsigned long)(fontaddr+0x3cf80);     
+ 325   3            addrHigh = (fontaddr&0xff0000)>>16;
+ 326   3            addrMid = (fontaddr&0xff00)>>8;
+ 327   3            addrLow = fontaddr&0xff;
+ 328   3      
+ 329   3            get_n_bytes_data_from_ROM(addrHigh,addrMid,addrLow,fontbuf,16 );/*È¡16¸ö×Ö½ÚµÄÊý¾Ý£¬´æµ½"fontbuf[32]"*/
+ 330   3            
+ 331   3            display_graphic_8x16(y,x,fontbuf);/*ÏÔÊ¾8x16µÄASCII×Öµ½LCDÉÏ£¬yÎªÒ³µØÖ·£¬xÎªÁÐµØÖ·£¬fontbuf[]ÎªÊý¾Ý*/
+ 332   3            i+=1;
+ 333   3            x+=8;
+ 334   3          }
+ 335   2          else
+ 336   2            i++;  
+ 337   2        }
+ 338   1        
+ 339   1      }
+ 340          
+ 341          void display_string_5x7(uchar y,uchar x,uchar *text)
+ 342          {
+ 343   1        unsigned char i= 0;
+ 344   1        unsigned char addrHigh,addrMid,addrLow ;
+ 345   1        while((text[i]>0x00))
+ 346   1        {
+ 347   2          
+ 348   2          if((text[i]>=0x20) &&(text[i]<=0x7e)) 
+ 349   2          {           
+ 350   3            unsigned char fontbuf[8];     
+ 351   3            fontaddr = (text[i]- 0x20);
+ 352   3            fontaddr = (unsigned long)(fontaddr*8);
+ 353   3            fontaddr = (unsigned long)(fontaddr+0x3bfc0);     
+ 354   3            addrHigh = (fontaddr&0xff0000)>>16;
+ 355   3            addrMid = (fontaddr&0xff00)>>8;
+ 356   3            addrLow = fontaddr&0xff;
+ 357   3      
+ 358   3            get_n_bytes_data_from_ROM(addrHigh,addrMid,addrLow,fontbuf,8);/*È¡8¸ö×Ö½ÚµÄÊý¾Ý£¬´æµ½"fontbuf[32]"*/
+ 359   3            
+ 360   3            display_graphic_5x7(y,x,fontbuf);/*ÏÔÊ¾5x7µÄASCII×Öµ½LCDÉÏ£¬yÎªÒ³µØÖ·£¬xÎªÁÐµØÖ·£¬fontbuf[]ÎªÊý¾Ý*/
+ 361   3            i+=1;
+ 362   3            x+=6;
+ 363   3          }
+C51 COMPILER V7.06   LCD_086                                                               12/09/2016 21:15:08 PAGE 7   
+
+ 364   2          else
+ 365   2          i++;  
+ 366   2        }
+ 367   1        
+ 368   1      }
+ 369          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2042    ----
+   CONSTANT SIZE    =     64    ----
+   XDATA SIZE       =      4     114
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

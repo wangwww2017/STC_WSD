@@ -1,0 +1,8 @@
+Removed Pin From Net: NetName=LED Pin=P5-12
+Removed Pin From Net: NetName=LED Pin=STC1-12
+Added Pin To Net: NetName=LED Pin=P6-12
+Added Pin To Net: NetName=LED Pin=STC1-37
+Added Pin To Net: NetName=P35 Pin=P5-12
+Added Pin To Net: NetName=P35 Pin=STC1-12
+Added Net: Name=P35
+Added Room: Name=WSD_STC12

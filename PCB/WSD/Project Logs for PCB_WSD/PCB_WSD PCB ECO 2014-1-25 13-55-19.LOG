@@ -1,0 +1,9 @@
+Added Component: Designator=R9(P0603)
+Added Component: Designator=R28(P0603)
+Added Pin To Net: NetName=NetNPN1_1 Pin=R9-1
+Added Pin To Net: NetName=BEEP Pin=R9-2
+Added Pin To Net: NetName=5V Pin=R28-1
+Added Pin To Net: NetName=NetNPN1_3 Pin=R28-2
+Added Member To Class: ClassName=WSD_STC12 Member=Component R9 10K
+Added Member To Class: ClassName=WSD_STC12 Member=Component R28 1K
+Added Room: Name=WSD_STC12

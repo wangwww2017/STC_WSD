@@ -1,0 +1,13 @@
+Removed Pin From Net: NetName=GND Pin=C10-1
+Removed Pin From Net: NetName=GND Pin=C11-1
+Removed Pin From Net: NetName=GND Pin=DS3-4
+Removed Pin From Net: NetName=DS-R\S\T\ Pin=DS3-5
+Removed Pin From Net: NetName=DS-IO Pin=DS3-6
+Removed Pin From Net: NetName=DS-SCK Pin=DS3-7
+Removed Member From Class: ClassName=WSD_STC12 Member=C10
+Removed Member From Class: ClassName=WSD_STC12 Member=C11
+Removed Member From Class: ClassName=WSD_STC12 Member=DS3
+Removed Member From Class: ClassName=WSD_STC12 Member=Y2
+Added Pin To Net: NetName=5V Pin=JLX1-7
+Added Pin To Net: NetName=5V Pin=NPN2-3
+Added Room: Name=WSD_STC12
